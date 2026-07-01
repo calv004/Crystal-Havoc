@@ -95,7 +95,7 @@ extern PVOID draugr_stub ( PVOID, PVOID, PVOID, PVOID, DRAUGR_PARAMETERS *, PVOI
 
 #define draugr_arg(i) ( ULONG_PTR ) ( call->args [ i ] )
 
-void init_frame_info ( SYNTHETIC_STACK_FRAME * frame )
+void init_frame_info ( SYNTHETIC_STACK_FRAME * frame, PVOID gadget_module )
 {
     PVOID frame1_module = KERNEL32$GetModuleHandleA ( "kernel32.dll" );
     PVOID frame2_module = KERNEL32$GetModuleHandleA ( "ntdll.dll" );
@@ -108,7 +108,7 @@ void init_frame_info ( SYNTHETIC_STACK_FRAME * frame )
     frame->Frame2.FunctionAddress = ( PVOID ) GetProcAddress ( ( HMODULE ) frame2_module, "RtlUserThreadStart" );
     frame->Frame2.Offset          = 0x2c;
 
-    frame->Gadget                 = KERNEL32$GetModuleHandleA ( "KernelBase.dll" );
+    frame->Gadget                 = gadget_module ? gadget_module : KERNEL32$GetModuleHandleA ( "KernelBase.dll" );
 }
 
 BOOL get_text_section_size ( PVOID module, PDWORD virtual_address, PDWORD size )
@@ -293,7 +293,7 @@ PVOID find_gadget( PVOID module )
     return gadget_list [ random ];
 }
 
-ULONG_PTR draugr_wrapper ( PVOID function, DWORD ssn, PVOID arg1, PVOID arg2, PVOID arg3, PVOID arg4, PVOID arg5, PVOID arg6, PVOID arg7, PVOID arg8, PVOID arg9, PVOID arg10, PVOID arg11, PVOID arg12 )
+ULONG_PTR draugr_wrapper ( PVOID function, DWORD ssn, PVOID gadget_module, PVOID arg1, PVOID arg2, PVOID arg3, PVOID arg4, PVOID arg5, PVOID arg6, PVOID arg7, PVOID arg8, PVOID arg9, PVOID arg10, PVOID arg11, PVOID arg12 )
 {
     int attempts         = 0;
     PVOID return_address = NULL;
@@ -305,7 +305,7 @@ ULONG_PTR draugr_wrapper ( PVOID function, DWORD ssn, PVOID arg1, PVOID arg2, PV
     }
 
     SYNTHETIC_STACK_FRAME frame;
-    init_frame_info ( &frame );
+    init_frame_info ( &frame, gadget_module );
 
     return_address                                 = ( PVOID ) ( ( UINT_PTR ) frame.Frame1.FunctionAddress + frame.Frame1.Offset );
     draugr_params.BaseThreadInitThunkStackSize     = calculate_function_stack_size_wrapper ( return_address );
@@ -347,31 +347,31 @@ ULONG_PTR spoof_call ( FUNCTION_CALL * call )
 {
     /* very inelegant */
     if ( call->argc == 0 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
     } else if ( call->argc == 1 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
     } else if ( call->argc == 2 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
     } else if ( call->argc == 3 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
     } else if ( call->argc == 4 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL );
     } else if ( call->argc == 5 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), NULL, NULL, NULL, NULL, NULL, NULL, NULL );
     } else if ( call->argc == 6 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), NULL, NULL, NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), NULL, NULL, NULL, NULL, NULL, NULL );
     } else if ( call->argc == 7 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), NULL, NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), NULL, NULL, NULL, NULL, NULL );
     } else if ( call->argc == 8 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), NULL, NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), NULL, NULL, NULL, NULL );
     } else if ( call->argc == 9 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), ( PVOID ) draugr_arg ( 8 ), NULL, NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), ( PVOID ) draugr_arg ( 8 ), NULL, NULL, NULL );
     } else if ( call->argc == 10 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), ( PVOID ) draugr_arg ( 8 ), ( PVOID ) draugr_arg ( 9 ), NULL, NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), ( PVOID ) draugr_arg ( 8 ), ( PVOID ) draugr_arg ( 9 ), NULL, NULL );
     } else if ( call->argc == 11 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), ( PVOID ) draugr_arg ( 8 ), ( PVOID ) draugr_arg ( 9 ), ( PVOID ) draugr_arg ( 10 ), NULL );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), ( PVOID ) draugr_arg ( 8 ), ( PVOID ) draugr_arg ( 9 ), ( PVOID ) draugr_arg ( 10 ), NULL );
     } else if ( call->argc == 12 ) {
-        return draugr_wrapper ( call->ptr, call->ssn, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), ( PVOID ) draugr_arg ( 8 ), ( PVOID ) draugr_arg ( 9 ), ( PVOID ) draugr_arg ( 10 ), ( PVOID ) draugr_arg ( 11 ) );
+        return draugr_wrapper ( call->ptr, call->ssn, call->gadget, ( PVOID ) draugr_arg ( 0 ), ( PVOID ) draugr_arg ( 1 ), ( PVOID ) draugr_arg ( 2 ), ( PVOID ) draugr_arg ( 3 ), ( PVOID ) draugr_arg ( 4 ), ( PVOID ) draugr_arg ( 5 ), ( PVOID ) draugr_arg ( 6 ), ( PVOID ) draugr_arg ( 7 ), ( PVOID ) draugr_arg ( 8 ), ( PVOID ) draugr_arg ( 9 ), ( PVOID ) draugr_arg ( 10 ), ( PVOID ) draugr_arg ( 11 ) );
     } else {
         return ( ULONG_PTR ) ( NULL );
     }

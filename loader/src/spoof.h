@@ -4,6 +4,7 @@ typedef struct {
     PVOID     ptr;
     DWORD     ssn;
     int       argc;
+    PVOID     gadget;
     ULONG_PTR args[16];
 } FUNCTION_CALL;
 

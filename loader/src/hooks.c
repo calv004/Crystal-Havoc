@@ -609,11 +609,15 @@ DECLSPEC_IMPORT BOOL      WINAPI WINHTTP$WinHttpReceiveResponse( HINTERNET hRequ
 DECLSPEC_IMPORT BOOL      WINAPI WINHTTP$WinHttpReadData( HINTERNET hRequest, LPVOID lpBuffer, DWORD dwNumberOfBytesToRead, LPDWORD lpdwNumberOfBytesRead );
 DECLSPEC_IMPORT BOOL      WINAPI WINHTTP$WinHttpQueryHeaders( HINTERNET hRequest, DWORD dwInfoLevel, LPCWSTR pwszName, LPVOID lpBuffer, LPDWORD lpdwBufferLength, LPDWORD lpdwIndex );
 DECLSPEC_IMPORT BOOL      WINAPI WINHTTP$WinHttpCloseHandle( HINTERNET hInternet );
+DECLSPEC_IMPORT HMODULE   WINAPI KERNEL32$GetModuleHandleA ( LPCSTR lpModuleName );
+
+#define WINHTTP_GADGET ( (PVOID) KERNEL32$GetModuleHandleA ( "winhttp.dll" ) )
 
 HINTERNET WINAPI _WinHttpOpen( LPCWSTR pszAgentW, DWORD dwAccessType, LPCWSTR pszProxyW, LPCWSTR pszProxyBypassW, DWORD dwFlags )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpOpen);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpOpen);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 5;
     call.args[0] = spoof_arg(pszAgentW);
     call.args[1] = spoof_arg(dwAccessType);
@@ -626,7 +630,8 @@ HINTERNET WINAPI _WinHttpOpen( LPCWSTR pszAgentW, DWORD dwAccessType, LPCWSTR ps
 HINTERNET WINAPI _WinHttpConnect( HINTERNET hSession, LPCWSTR pswzServerName, INTERNET_PORT nServerPort, DWORD dwReserved )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpConnect);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpConnect);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 4;
     call.args[0] = spoof_arg(hSession);
     call.args[1] = spoof_arg(pswzServerName);
@@ -638,7 +643,8 @@ HINTERNET WINAPI _WinHttpConnect( HINTERNET hSession, LPCWSTR pswzServerName, IN
 HINTERNET WINAPI _WinHttpOpenRequest( HINTERNET hConnect, LPCWSTR pwszVerb, LPCWSTR pwszObjectName, LPCWSTR pwszVersion, LPCWSTR pwszReferrer, LPCWSTR *ppwszAcceptTypes, DWORD dwFlags )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpOpenRequest);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpOpenRequest);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 7;
     call.args[0] = spoof_arg(hConnect);
     call.args[1] = spoof_arg(pwszVerb);
@@ -653,7 +659,8 @@ HINTERNET WINAPI _WinHttpOpenRequest( HINTERNET hConnect, LPCWSTR pwszVerb, LPCW
 BOOL WINAPI _WinHttpSetOption( HINTERNET hInternet, DWORD dwOption, LPVOID lpBuffer, DWORD dwBufferLength )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpSetOption);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpSetOption);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 4;
     call.args[0] = spoof_arg(hInternet);
     call.args[1] = spoof_arg(dwOption);
@@ -665,7 +672,8 @@ BOOL WINAPI _WinHttpSetOption( HINTERNET hInternet, DWORD dwOption, LPVOID lpBuf
 BOOL WINAPI _WinHttpAddRequestHeaders( HINTERNET hRequest, LPCWSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwModifiers )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpAddRequestHeaders);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpAddRequestHeaders);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 4;
     call.args[0] = spoof_arg(hRequest);
     call.args[1] = spoof_arg(lpszHeaders);
@@ -677,7 +685,8 @@ BOOL WINAPI _WinHttpAddRequestHeaders( HINTERNET hRequest, LPCWSTR lpszHeaders, 
 BOOL WINAPI _WinHttpSendRequest( HINTERNET hRequest, LPCWSTR lpszHeaders, DWORD dwHeadersLength, LPVOID lpOptional, DWORD dwOptionalLength, DWORD dwTotalLength, DWORD_PTR dwContext )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpSendRequest);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpSendRequest);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 7;
     call.args[0] = spoof_arg(hRequest);
     call.args[1] = spoof_arg(lpszHeaders);
@@ -692,7 +701,8 @@ BOOL WINAPI _WinHttpSendRequest( HINTERNET hRequest, LPCWSTR lpszHeaders, DWORD 
 BOOL WINAPI _WinHttpReceiveResponse( HINTERNET hRequest, LPVOID lpReserved )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpReceiveResponse);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpReceiveResponse);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 2;
     call.args[0] = spoof_arg(hRequest);
     call.args[1] = spoof_arg(lpReserved);
@@ -702,7 +712,8 @@ BOOL WINAPI _WinHttpReceiveResponse( HINTERNET hRequest, LPVOID lpReserved )
 BOOL WINAPI _WinHttpReadData( HINTERNET hRequest, LPVOID lpBuffer, DWORD dwNumberOfBytesToRead, LPDWORD lpdwNumberOfBytesRead )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpReadData);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpReadData);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 4;
     call.args[0] = spoof_arg(hRequest);
     call.args[1] = spoof_arg(lpBuffer);
@@ -714,7 +725,8 @@ BOOL WINAPI _WinHttpReadData( HINTERNET hRequest, LPVOID lpBuffer, DWORD dwNumbe
 BOOL WINAPI _WinHttpQueryHeaders( HINTERNET hRequest, DWORD dwInfoLevel, LPCWSTR pwszName, LPVOID lpBuffer, LPDWORD lpdwBufferLength, LPDWORD lpdwIndex )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpQueryHeaders);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpQueryHeaders);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 6;
     call.args[0] = spoof_arg(hRequest);
     call.args[1] = spoof_arg(dwInfoLevel);
@@ -728,7 +740,8 @@ BOOL WINAPI _WinHttpQueryHeaders( HINTERNET hRequest, DWORD dwInfoLevel, LPCWSTR
 BOOL WINAPI _WinHttpCloseHandle( HINTERNET hInternet )
 {
     FUNCTION_CALL call = { 0 };
-    call.ptr  = (PVOID)(WINHTTP$WinHttpCloseHandle);
+    call.ptr    = (PVOID)(WINHTTP$WinHttpCloseHandle);
+    call.gadget = WINHTTP_GADGET;
     call.argc = 1;
     call.args[0] = spoof_arg(hInternet);
     return (BOOL)spoof_call(&call);
@@ -1230,8 +1243,6 @@ DECLSPEC_IMPORT HMODULE WINAPI KERNEL32$LoadLibraryW    ( LPCWSTR lpLibFileName 
 DECLSPEC_IMPORT BOOL    WINAPI KERNEL32$FreeLibrary     ( HMODULE hLibModule );
 DECLSPEC_IMPORT BOOL    WINAPI KERNEL32$WriteFile       ( HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped );
 DECLSPEC_IMPORT BOOL    WINAPI KERNEL32$ReadFile        ( HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped );
-DECLSPEC_IMPORT HMODULE WINAPI KERNEL32$GetModuleHandleA( LPCSTR lpModuleName );
-
 HMODULE WINAPI _LoadLibraryW( LPCWSTR lpLibFileName )
 {
     FUNCTION_CALL call = { 0 };
