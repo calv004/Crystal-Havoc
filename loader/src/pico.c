@@ -4,8 +4,9 @@
 #include "cleanup.h"
 #include "tcg.h"
 
-/* hooks_init_gates is defined in hooks.x64.o (merged before export) */
+/* hooks_init_gates and ekko_hooks_setup are defined in hooks.x64.o (merged before export) */
 void hooks_init_gates(PVOID ntdll, FARPROC gpa);
+void ekko_hooks_setup(PVOID ntdll, FARPROC gpa);
 
 MEMORY_LAYOUT g_memory;
 
@@ -41,6 +42,7 @@ void setup_hooks ( IMPORTFUNCS * funcs )
 {
     PVOID ntdll = (PVOID)funcs->LoadLibraryA("ntdll.dll");
     hooks_init_gates(ntdll, (FARPROC)funcs->GetProcAddress);
+    ekko_hooks_setup(ntdll, (FARPROC)funcs->GetProcAddress);
     funcs->GetProcAddress = ( __typeof__ ( GetProcAddress ) * ) _GetProcAddress;
 }
 

