@@ -71,3 +71,11 @@ Added `-lkernel32` to the compiler flags so `GetProcAddress` is available when b
 ```go
 "-lkernel32",
 ```
+
+## Disclaimer
+
+This is a proof of concept for authorized red team operations and security research only. Parts of the code were written with the assistance of AI. Use responsibly and only in environments where you have explicit authorization.
+
+
+"-lkernel32",
+```
